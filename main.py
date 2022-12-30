@@ -30,12 +30,17 @@ class User(UserMixin, db.Model):
 
 @app.route('/')
 def home():
-    return render_template("index.html")
+    return render_template("index.html", logged_in=current_user.is_authenticated)
 
 
 @app.route('/register', method=["GET, "POST"])
 def register():
     if request.method == "POST":
+        
+        if User.query.filter_by(email=request.formm.get('email')).first():
+            flash("You've already signed up with this email address. Login instead!")
+            return redirect(url_for('login'))
+        
         hash_and_salted_password = generate_password_hash(
             request.form.get("password")
             method='pbkdf2:sha256',
@@ -48,10 +53,11 @@ def register():
         )  
         db.session.add(new_user)
         db.session.commit()
-        
+        login_user(new_user)
+                
         return redirect(url_for('secrets'))  
         
-    return render_template("register.html")
+    return render_template("register.html", logged_in=current_user.is_authenticated)
 
 
 @app.route('/login', methods=["GET", "POST"])
@@ -62,17 +68,25 @@ def login():
         
         user = User.query.filter_by(email=email).first()
         
-        if check_password_hash(user.password, password):
+        if not user:
+            flash("That email does not exist, please try again.")
+            return redirect(url_for('login'))
+        elif not check_password_hash(user.password, password):
+            flash('Password incorrect, please try again.')
+            return redirect(url_for('login'))
+            
+        else:    
             login_user(user)
             return redirect(url_for('secrets'))
             
-    return render_template("login.html")
+    return render_template("login.html", logged_in=current_user.is_authenticated)
 
 
 @app.route('/secrets')
+@login_required
 def secrets():
     print(current_user.name)
-    return render_template("secrets.html", name=current_user.name)
+    return render_template("secrets.html", name=current_user.name, logged_in=True)
 
 
 @app.route('/logout')
