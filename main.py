@@ -71,8 +71,8 @@ def login():
 
 @app.route('/secrets')
 def secrets():
-    
-    return render_template("secrets.html")
+    print(current_user.name)
+    return render_template("secrets.html", name=current_user.name)
 
 
 @app.route('/logout')
