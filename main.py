@@ -32,7 +32,12 @@ def register():
             email=request.form.get('email'),
             name=request.form.get('name'),
             password=request.form.get('password')
-        )    
+        )  
+        
+        db.session.add(new_user)
+        db.session.commit()
+        
+        return redirect(url_for('secrets'))  
     return render_template("register.html")
 
 
