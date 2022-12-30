@@ -36,6 +36,11 @@ def home():
 @app.route('/register', method=["GET, "POST"])
 def register():
     if request.method == "POST":
+        
+        if User.query.filter_by(email=request.formm.get('email')).first():
+            flash("You've already signed up with this email address. Login instead!")
+            return redirect(url_for('login'))
+        
         hash_and_salted_password = generate_password_hash(
             request.form.get("password")
             method='pbkdf2:sha256',
@@ -48,7 +53,8 @@ def register():
         )  
         db.session.add(new_user)
         db.session.commit()
-        
+        login_user(new_user)
+                
         return redirect(url_for('secrets'))  
         
     return render_template("register.html")
@@ -62,7 +68,14 @@ def login():
         
         user = User.query.filter_by(email=email).first()
         
-        if check_password_hash(user.password, password):
+        if not user:
+            flash("That email does not exist, please try again.")
+        
+        elif not check_password_hash(user.password, password):
+            flash('Password incorrect, please try again.')
+            return redirect(url_for('login'))
+            
+        else:    
             login_user(user)
             return redirect(url_for('secrets'))
             
